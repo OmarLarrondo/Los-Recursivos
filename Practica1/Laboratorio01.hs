@@ -9,7 +9,16 @@ sumaCuadradosPares xs = sum (map (^2) (filter even xs))
 aplicaTresVeces :: (a -> a) -> a -> a
 aplicaTresVeces f x = f (f (f x))
 
+--ISMAEL--
 varianza2 :: Double -> Double -> Double
+varianza2 0 0 = 0
+varianza2 x y =
+    let media = varianza_media x y
+    in (x - media) ^ 2+ (y - media ) ^ 2 / 2
+
+varianza_media :: Double -> Double -> Double
+varianza_media x y = (x + y)/2
+
 
 clasificaTemperatura :: Int -> String
 
