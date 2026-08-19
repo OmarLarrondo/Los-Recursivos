@@ -14,6 +14,9 @@ varianza2 :: Double -> Double -> Double
 clasificaTemperatura :: Int -> String
 
 intercala :: a -> [a] -> [a]
+intercala _ [] = []
+intercala _ [x] = [x]
+intercala sep (x : xs) = x : sep : intercala sep xs
 
 data Expr
   = Lit Int
@@ -22,3 +25,6 @@ data Expr
   deriving (Eq, Show)
 
 evalua :: Expr -> Int
+evalua (Lit n) = n
+evalua (Suma e1 e2) = evalua e1 + evalua e2
+evalua (Producto e1 e2) = evalua e1 * evalua e2
