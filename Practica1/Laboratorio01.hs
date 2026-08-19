@@ -14,7 +14,7 @@ varianza2 :: Double -> Double -> Double
 varianza2 0 0 = 0
 varianza2 x y =
     let media = varianza_media x y
-    in (x - media) ^ 2+ (y - media ) ^ 2 / 2
+    in (((x - media) ^ 2) + ((y - media ) ^ 2)) / 2
 
 varianza_media :: Double -> Double -> Double
 varianza_media x y = (x + y)/2
