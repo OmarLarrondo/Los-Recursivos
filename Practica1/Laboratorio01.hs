@@ -28,7 +28,7 @@ clasificaTemperatura x
   | x <= 35 = "calido"
   | otherwise = "calor extremo"
 
-
+---- Omar (6 y 7)
 intercala :: a -> [a] -> [a]
 intercala _ [] = []
 intercala _ [x] = [x]
