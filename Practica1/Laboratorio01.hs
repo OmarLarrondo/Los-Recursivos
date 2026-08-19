@@ -19,8 +19,15 @@ varianza2 x y =
 varianza_media :: Double -> Double -> Double
 varianza_media x y = (x + y)/2
 
-
+--ISMAEL
 clasificaTemperatura :: Int -> String
+clasificaTemperatura x
+  | x <= 0 = "frio extremo"
+  | x <= 15 = "frio"
+  | x <= 25 = "templado"
+  | x <= 35 = "calido"
+  | otherwise = "calor extremo"
+
 
 intercala :: a -> [a] -> [a]
 intercala _ [] = []
