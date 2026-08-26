@@ -34,7 +34,18 @@ tokens :-
   -- Agrega aqui las reglas lexicas para:
   --   and, or, *, /, expt, <, >, <=, >=, eq, add1, sub1, zero?
   -- Recuerda reconocer <= y >= como tokens completos.
-
+--ISMAEL--
+  --Se ponen directo por la sintaxis de lexer
+  and                   { \_ -> TokenAnd }
+  or                    { \_ -> TokenOr }
+  \*                     { \_ -> TokenMul }
+  /                     { \_ -> TokenDiv }
+  --definir expt directamente  en el pdf dice
+  --directo
+  expt                    { \_ -> TokenExpt }
+  <                     { \_ -> TokenLe }
+  >                   { \_ -> TokenGt }
+-----
   .                     { \s -> error ("Lexical error: caracter no reconocido = "
                                       ++ show s
                                       ++ " | codepoints = "
