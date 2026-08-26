@@ -32,6 +32,7 @@ import Lexer (Token(..), lexer)
 
 %%
 
+--- Omar
 ASA : nat                          { Num $1 }
     | bool                         { Boolean $1 }
     | '(' "and" Args ')'           { And $3 }
