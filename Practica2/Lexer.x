@@ -39,21 +39,20 @@ tokens :-
   and                   { \_ -> TokenAnd }
   or                    { \_ -> TokenOr }
   \*                     { \_ -> TokenMul }
-  /                     { \_ -> TokenDiv }
+  \/                    { \_ -> TokenDiv }
   --definir expt directamente  en el pdf dice
   --directo
   expt                    { \_ -> TokenExpt }
-  <                     { \_ -> TokenLe }
-  >                   { \_ -> TokenGt }
------
+  \<                    { \_ -> TokenLT }
+  \>                    { \_ -> TokenGT }
 
   --Yahir:
-  "<="                  { \_ -> TokenLE }
-  ">="                  { \_ -> TokenGE }
+  \<\=                  { \_ -> TokenLE }
+  \>\=                  { \_ -> TokenGE }
   eq                    { \_ -> TokenEq }
   add1                  { \_ -> TokenAdd1 }
   sub1                  { \_ -> TokenSub1 }
-  "Zero?"               { \_ -> TokenZeroP}
+  zero\?                { \_ -> TokenZeroP}
 
   .                     { \s -> error ("Lexical error: caracter no reconocido = "
                                       ++ show s
