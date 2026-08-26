@@ -17,6 +17,7 @@ Este repositorio contiene las prácticas que se desarrollarán a lo largo del cu
 ## Contenido
 
 - [Practica1/](Practica1/) — Práctica 1
+- [Practica2/](Practica2/) — Práctica 2: MiniLisp++
 
 ---
 
