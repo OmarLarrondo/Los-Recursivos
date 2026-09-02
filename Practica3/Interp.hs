@@ -13,7 +13,7 @@ sust :: ASA -> String -> ASA -> ASA
 
 sustMany :: ASA -> [Binding] -> ASA
 
--- RETO 4: semantica operacional de paso grande
+-- RETO 4: semantica operacional de paso grande (Omar Alejandro)
 -- let es simultaneo; let* se evalua directamente, asociacion por asociacion.
 bigStep :: ASA -> Maybe ASA
 bigStep expression =
