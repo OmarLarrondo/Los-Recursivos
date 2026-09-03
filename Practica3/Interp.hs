@@ -49,15 +49,14 @@ freeVars' (EqP x y ) =  freeVars' x ++ freeVars' y
 --let los nombres ligan solo el cuerpo
 
 --primero analizar las vars libres de la expresion, luego el cuerpo
-freeVars' (Let bindings cuerpo ) =  
+
+freeVars' (Let bindings cuerpo) =
     let nombres = nameStringBind bindings
-
         varsEnExprs = freeVarsBindings bindings
-
-        varsEnCuerpo = freeVars' cuerpo
-
-    in varsEnExprs ++ (varsEnCuerpo \\ nombres)
-
+        varsEnCuerpo = varsLibresCuerpo cuerpo
+        --SE USA FILTER, PUES \\ SOLO ELIMINA LA PRIMERA APARICION
+        --CON FILTER CHECA CADA UNO Y LOS ELIMINA
+    in nub (varsEnExprs ++ filter (`notElem` nombres) varsEnCuerpo)
 --caso donde no ha bindings
 freeVars' (LetStar [] cuerpo ) = freeVars' cuerpo
 
@@ -139,11 +138,13 @@ namesBindings :: [Binding] -> [String]
 namesBindings [] = []
 namesBindings ((x, expr) : xs) = x : names expr ++ namesBindings xs
 
+--[z1,z2,...] infinitamente hasta que sea el bueno
 freshName :: [String] -> String
 freshName xs = nuevoNombre "z" xs
   where
     nuevoNombre base ocupados = head [n | n <- candidatos, not (n `elem` ocupados)]
       where candidatos = base : [base ++ show i | i <- [1..]]
+
 
 sust :: ASA -> String -> ASA -> ASA
 sust (Id y) x s 
@@ -196,10 +197,43 @@ sust (LetStar [] cuerpo) x s = sust cuerpo x s
 
 --letStar con varios bindings
 --se convierte en lets normales, igual que en freeVars
---let* [y1,y2,.] cuerpo == let [y1] (let* [ys,...] cuerpo)
+--letStar [y1,y2,.] cuerpo == let [y1] (letStar [ys,...] cuerpo)
 --anidacion de let s normales 
-sust (LetStar (y:ys) cuerpo) x s =
-    sust (Let [y] (LetStar ys cuerpo)) x s
+sust (LetStar bindings cuerpo) x s =
+    let (bindingsFinales, cuerpoFinal) = sustLetStarAux bindings cuerpo x s
+    in LetStar bindingsFinales cuerpoFinal
+
+-- Procesa los bindings uno a uno
+sustLetStarAux :: [Binding] -> ASA -> String -> ASA -> ([Binding], ASA)
+sustLetStarAux [] cuerpo x s = ([], sust cuerpo x s)
+sustLetStarAux ((nombre, expr):bs) cuerpo x s
+    -- vuelve a ligar x, se sustituye SOLO su propio expr
+    | nombre == x =
+        ((nombre, sust expr x s) : bs, cuerpo)
+    -- aparece libre en s
+    | nombre `elem` freeVars s =
+        let prohibidos = names s ++ names cuerpo ++ concatMap (\(n,e) -> n : names e) bs
+            --generar un name nuevo
+            nombreFresco = freshName prohibidos
+            --quita las vars viejas en las expr de los bindig
+            bsRenombrado = renombraBindings bs nombre nombreFresco
+            cuerpoRenombrado = sust cuerpo nombre (Id nombreFresco)
+            (bsFinal, cuerpoFinal) = sustLetStarAux bsRenombrado cuerpoRenombrado x s
+            --continuar sustiruyendo x
+        in ((nombreFresco, sust expr x s) : bsFinal, cuerpoFinal)
+    -- si el name de binginf no es x y tampco causa captura con s,
+    -- sustituye x en la expr actual
+
+    | otherwise =
+        let (bsFinal, cuerpoFinal) = sustLetStarAux bs cuerpo x s
+        in ((nombre, sust expr x s) : bsFinal, cuerpoFinal)
+
+-- busca las expr que vienen de abajo para cambiarlas a nuevas
+renombraBindings :: [Binding] -> String -> String -> [Binding]
+renombraBindings [] _ _ = []
+renombraBindings ((nombre, expr):bs) viejo nuevo
+    | nombre == viejo = (nombre, sust expr viejo (Id nuevo)) : bs
+    | otherwise = (nombre, sust expr viejo (Id nuevo)) : renombraBindings bs viejo nuevo
 
 --func auxiliar
 --sustituye en las expresiones de los bindings
@@ -215,7 +249,7 @@ sustLista [] x s = []
 sustLista (y:ys) x s = [sust y x s] ++ sustLista ys x s  
 
 --func auxiliar
---revisa si algun nombre de los bindings puede capturar
+--revisa si algun nombre de los bindings puede capturarz
 --una variable libre de s
 evitaCaptura :: [Binding] -> ASA -> ASA -> ([Binding], ASA)
 evitaCaptura [] cuerpo s = ([], cuerpo)
@@ -254,11 +288,13 @@ sustMany cuerpo bindings =
     in foldl (\acc (xf, s) -> sust acc xf s) cuerpoRenombrado (zip frescos ss)
 
 -- Función auxiliar para generar variables frescas en masa
+--refrescarNombres ["x", "y", "x"] ["x", "y"] -> ["x'", "y'", "x''"]
 refrescarNombres :: [String] -> [String] -> [String]
 refrescarNombres [] _ = []
 refrescarNombres (x:xs) ocupados =
     let xf = freshName ocupados
     in xf : refrescarNombres xs (xf : ocupados)
+
 ------------------------------------
 --OUUUUUUUUUUMAAAAAAAAAAAR-----------
 ------------------------------------
