@@ -1,7 +1,7 @@
 module Interp where
 
 import Grammars
-
+import Data.List (nub)
 
 ----------------------------------------------
 ----------------ISMAEL---------------------------
