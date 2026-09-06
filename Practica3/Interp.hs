@@ -3,297 +3,168 @@ module Interp where
 import Grammars
 import Data.List (nub)
 
-----------------------------------------------
-----------------ISMAEL---------------------------
-------------------------------
+-- Implementacion del reto 3: Ismael.
 -- RETO 3: sustitucion nominal que evita captura
 freeVars :: ASA -> [String]
-freeVars = nub . freeVars'
-
---regresamos la vacia, pues no tiene variables aqui
-freeVars' (Num n) = []
-freeVars' (Boolean _) = []
-
---el Id es que es una var libre, pues no la esta agarrando nada
-freeVars' (Id x) = [x]
-
---con varios elementos el ASA
---se debe sacar las varsfree de cada elemento de la lista xs
--- y se concatena con su cola
-freeVars' (And xs) = freeVarsLista xs
-freeVars' (Or xs) =  freeVarsLista xs
-freeVars' (Add xs) =  freeVarsLista xs
-freeVars' (Sub xs) =  freeVarsLista xs
-freeVars' (Mul xs) =  freeVarsLista xs
-freeVars' (Div xs) =  freeVarsLista xs
-freeVars' (Lt xs) =  freeVarsLista xs
-freeVars' (Gt xs) =  freeVarsLista xs
-freeVars' (Le xs) =  freeVarsLista xs
-freeVars' (Ge xs) =  freeVarsLista xs
-
---con un solo arg
---se pasa directo, pues las vars libres de estas son las mismas
-freeVars' (Not x) =  freeVars' x
-freeVars' (Add1 x) =  freeVars' x 
-freeVars' (Sub1 x) =  freeVars' x 
-freeVars' (ZeroP x) =  freeVars' x
-
---ops con 2 ASA 
---lo mismo 
-freeVars' (Expt x y ) =  freeVars' x ++ freeVars' y
-freeVars' (EqP x y ) =  freeVars' x ++ freeVars' y
-
---let y letStar...
---OJOOOO: binding es la dupla (String, ASA) == (nombre, expresion)
--- por ejemplo es [("x", Num 10)]
---let los nombres ligan solo el cuerpo
-
---primero analizar las vars libres de la expresion, luego el cuerpo
-
-freeVars' (Let bindings cuerpo) =
-    let nombres = nameStringBind bindings
-        varsEnExprs = freeVarsBindings bindings
-        varsEnCuerpo = varsLibresCuerpo cuerpo
-        --SE USA FILTER, PUES \\ SOLO ELIMINA LA PRIMERA APARICION
-        --CON FILTER CHECA CADA UNO Y LOS ELIMINA
-    in nub (varsEnExprs ++ filter (`notElem` nombres) varsEnCuerpo)
---caso donde no ha bindings
-freeVars' (LetStar [] cuerpo ) = freeVars' cuerpo
-
---caso interesnate:
-freeVars' (LetStar (b:bs) cuerpo) =
-    freeVars' (Let [b] (LetStar bs cuerpo))
-
---func aux
---saca las vars libres de (String, expresion)
-freeVarsBindings :: [Binding] -> [String]
-freeVarsBindings [] = []
-freeVarsBindings ((y, expr):xs) = freeVarsExpBind (y, expr) ++ freeVarsBindings xs
-
---saca las vars libres de un bing
---variables libres de las expresiones asignadas en los bindings (los ASA de la tupla).
-freeVarsExpBind :: (String,ASA) -> [String]
-freeVarsExpBind (name, expr) = freeVars' expr
-
---nombres declarados (los String de la tupla).
-nameStringBind :: [(String, ASA)] -> [String]
-nameStringBind [] = []
-nameStringBind ((x,_):xs) = [x] ++ nameStringBind xs
-
---vars libres del cuerpo
-varsLibresCuerpo :: ASA ->[String]
-varsLibresCuerpo x = freeVars x
-
-
---func auxiliar para sacar las vars libres (no fue tan necesaria pues e puso usar funciones de ordne sup)
-freeVarsLista :: [ASA] -> [String]
-freeVarsLista [] = []
-freeVarsLista (x:xs) = freeVars' x ++freeVarsLista xs
+freeVars = nub . go
+  where
+    go (Id x) = [x]
+    go (Num _) = []
+    go (Boolean _) = []
+    go (And es) = concatMap go es
+    go (Or es) = concatMap go es
+    go (Add es) = concatMap go es
+    go (Sub es) = concatMap go es
+    go (Mul es) = concatMap go es
+    go (Div es) = concatMap go es
+    go (Lt es) = concatMap go es
+    go (Gt es) = concatMap go es
+    go (Le es) = concatMap go es
+    go (Ge es) = concatMap go es
+    go (Expt e1 e2) = go e1 ++ go e2
+    go (EqP e1 e2) = go e1 ++ go e2
+    go (Not e) = go e
+    go (Add1 e) = go e
+    go (Sub1 e) = go e
+    go (ZeroP e) = go e
+    go (Let bindings body) =
+      concatMap (go . snd) bindings
+        ++ filter (`notElem` map fst bindings) (go body)
+    go (LetStar [] body) = go body
+    go (LetStar ((x, e) : bindings) body) =
+      go e ++ filter (/= x) (go (LetStar bindings body))
 
 --agarrar todos los names del arbol, vars libres, ligadas y los names
 --declarados en los bingings
 names :: ASA -> [String]
-names = nub . names'
-names' (Num n) = []
-names' (Boolean _) = []
-names' (Id x) = [x]
-names' (And xs) = namesLista xs
-names' (Or xs) =  namesLista xs
-names' (Add xs) = namesLista xs
-names' (Sub xs) = namesLista xs
-names' (Mul xs) = namesLista xs
-names' (Div xs) = namesLista xs
-names' (Lt xs) =  namesLista xs
-names' (Gt xs) =  namesLista xs
-names' (Le xs) =  namesLista xs
-names' (Ge xs) =  namesLista xs
+names = nub . go
+  where
+    go (Id x) = [x]
+    go (Num _) = []
+    go (Boolean _) = []
+    go (And es) = concatMap go es
+    go (Or es) = concatMap go es
+    go (Add es) = concatMap go es
+    go (Sub es) = concatMap go es
+    go (Mul es) = concatMap go es
+    go (Div es) = concatMap go es
+    go (Lt es) = concatMap go es
+    go (Gt es) = concatMap go es
+    go (Le es) = concatMap go es
+    go (Ge es) = concatMap go es
+    go (Expt e1 e2) = go e1 ++ go e2
+    go (EqP e1 e2) = go e1 ++ go e2
+    go (Not e) = go e
+    go (Add1 e) = go e
+    go (Sub1 e) = go e
+    go (ZeroP e) = go e
+    go (Let bindings body) = bindingNames bindings ++ go body
+    go (LetStar bindings body) = bindingNames bindings ++ go body
 
-names' (Not x) =  names' x
-names' (Add1 x) =  names' x 
-names' (Sub1 x) =  names' x 
-names' (ZeroP x) =  names' x
-names' (Expt x y ) =  names' x ++ names' y
-names' (EqP x y ) =  names' x ++ names' y
-
---names en (String, ASA) y en el cuerpo igual es un ASA
-
-names' (Let bindings cuerpo ) =  
-    let nombresBinding = namesBindings bindings
-        nameCuerpo = names' cuerpo
-    in nub (nombresBinding ++ nameCuerpo)
---caso interesnate:
-names' (LetStar bindings cuerpo) = 
-    nub (namesBindings bindings ++ names cuerpo)
-
-
-
---func auxiliar para sacar los names
-namesLista :: [ASA] -> [String]
-namesLista [] = []
-namesLista (x:xs) = names' x ++ namesLista xs
-
-
--- Extrae TODOS los nombres presentes en los bindings (tanto la clave String como el cuerpo ASA)
-namesBindings :: [Binding] -> [String]
-namesBindings [] = []
-namesBindings ((x, expr) : xs) = x : names expr ++ namesBindings xs
+    bindingNames = concatMap (\(x, e) -> x : go e)
 
 --[z1,z2,...] infinitamente hasta que sea el bueno
 freshName :: [String] -> String
-freshName xs = nuevoNombre "z" xs
+freshName used = head (filter (`notElem` used) candidates)
   where
-    nuevoNombre base ocupados = head [n | n <- candidatos, not (n `elem` ocupados)]
-      where candidatos = base : [base ++ show i | i <- [1..]]
+    candidates = "z" : ["z" ++ show n | n <- [(1 :: Int) ..]]
 
 
 sust :: ASA -> String -> ASA -> ASA
-sust (Id y) x s 
-    | y == x = s
-    | otherwise = (Id y)
-sust (Num n) x s = Num n
-sust (Boolean b) x s = Boolean b
+sust expression x replacement =
+  case expression of
+    Id y | y == x -> replacement
+         | otherwise -> Id y
+    Num n -> Num n
+    Boolean b -> Boolean b
+    And es -> And (mapSubst es)
+    Or es -> Or (mapSubst es)
+    Add es -> Add (mapSubst es)
+    Sub es -> Sub (mapSubst es)
+    Mul es -> Mul (mapSubst es)
+    Div es -> Div (mapSubst es)
+    Lt es -> Lt (mapSubst es)
+    Gt es -> Gt (mapSubst es)
+    Le es -> Le (mapSubst es)
+    Ge es -> Ge (mapSubst es)
+    Expt e1 e2 -> Expt (recur e1) (recur e2)
+    EqP e1 e2 -> EqP (recur e1) (recur e2)
+    Not e -> Not (recur e)
+    Add1 e -> Add1 (recur e)
+    Sub1 e -> Sub1 (recur e)
+    ZeroP e -> ZeroP (recur e)
+    Let bindings body -> substLet bindings body
+    LetStar [] body -> LetStar [] (recur body)
+    LetStar ((y, e) : bindings) body -> substLetStar y e bindings body
+  where
+    recur e = sust e x replacement
+    mapSubst = map recur
 
---n ops
-sust (And ys) x s =  And (sustLista ys x s)
-sust (Or ys) x s =  Or (sustLista ys x s)
-sust (Add ys) x s =  Add (sustLista ys x s)
-sust (Sub ys) x s =  Sub (sustLista ys x s)
-sust (Mul ys) x s =  Mul (sustLista ys x s)
-sust (Div ys) x s =  Div (sustLista ys x s)
-sust (Lt ys) x s =  Lt (sustLista ys x s)
-sust (Gt ys) x s =  Gt (sustLista ys x s)
-sust (Le ys) x s =  Le (sustLista ys x s)
-sust (Ge ys) x s =  Ge (sustLista ys x s)
---1 argumen
-sust (Not y) x s =  Not (sust y x s)
-sust (Add1 y) x s =  Add1 (sust y x s)
-sust (Sub1 y) x s =  Sub1 (sust y x s)
-sust (ZeroP y) x s =  ZeroP (sust y x s)
---2 argu
-sust (Expt y z) x s =  Expt (sust y x s) (sust z x s)
-sust (EqP y z) x s =  EqP (sust y x s) (sust z x s)
+    substLet bindings body =
+      let bindings' = map (\(y, e) -> (y, recur e)) bindings
+          binders = map fst bindings
+       in if x `elem` binders || x `notElem` freeVars body
+            then Let bindings' body
+            else
+              let (renamedBinders, renamedBody) =
+                    renameLetBinders
+                      binders
+                      body
+                      (names body ++ binders ++ names replacement ++ [x])
+               in Let
+                    (zip renamedBinders (map snd bindings'))
+                    (recur renamedBody)
 
--- let y letStar
-sust (Let bindings cuerpo) x s
-    --si x ya esta ligada por este let, no se sustituye en el cuerpo
-    --solo sustituye en las expre de los binding, el cuerpo no se toca
-    | x `elem` nameStringBind bindings = Let (sustBindingsExprs bindings x s) cuerpo
-    | otherwise =
-        --checar captura de vars libres, puede que en let al momento de 
-        --sustiuir las vars que no eran libres, ahora estne ligadas
-        --evita captura detecta si algun name de bindings choca con las vars libres de s
-        --si choca, crea una vars nueva para renombrar la var 
-        let (bindingsRenombrados, cuerpoRenombrado) = evitaCaptura bindings cuerpo s
-            --hace la sustitucion
-            bindingsFinales = sustBindingsExprs bindingsRenombrados x s
-            --usa cuerpoRenombrado para sustituir
-            cuerpoFinal = sust cuerpoRenombrado x s
-        --hace el Let correcto
-        in Let bindingsFinales cuerpoFinal
+    renameLetBinders [] body _ = ([], body)
+    renameLetBinders (y : ys) body used
+      | y `elem` freeVars replacement =
+          let fresh = freshName used
+              body' = sust body y (Id fresh)
+              (ys', finalBody) = renameLetBinders ys body' (fresh : used)
+           in (fresh : ys', finalBody)
+      | otherwise =
+          let (ys', finalBody) = renameLetBinders ys body used
+           in (y : ys', finalBody)
 
---letStar sin bindings
---si no hay bindings, se sustituye directamente en el cuerpo
-sust (LetStar [] cuerpo) x s = sust cuerpo x s
-
---letStar con varios bindings
---se convierte en lets normales, igual que en freeVars
---letStar [y1,y2,.] cuerpo == let [y1] (letStar [ys,...] cuerpo)
---anidacion de let s normales 
-sust (LetStar bindings cuerpo) x s =
-    let (bindingsFinales, cuerpoFinal) = sustLetStarAux bindings cuerpo x s
-    in LetStar bindingsFinales cuerpoFinal
-
--- Procesa los bindings uno a uno
-sustLetStarAux :: [Binding] -> ASA -> String -> ASA -> ([Binding], ASA)
-sustLetStarAux [] cuerpo x s = ([], sust cuerpo x s)
-sustLetStarAux ((nombre, expr):bs) cuerpo x s
-    -- vuelve a ligar x, se sustituye SOLO su propio expr
-    | nombre == x =
-        ((nombre, sust expr x s) : bs, cuerpo)
-    -- aparece libre en s
-    | nombre `elem` freeVars s =
-        let prohibidos = names s ++ names cuerpo ++ concatMap (\(n,e) -> n : names e) bs
-            --generar un name nuevo
-            nombreFresco = freshName prohibidos
-            --quita las vars viejas en las expr de los bindig
-            bsRenombrado = renombraBindings bs nombre nombreFresco
-            cuerpoRenombrado = sust cuerpo nombre (Id nombreFresco)
-            (bsFinal, cuerpoFinal) = sustLetStarAux bsRenombrado cuerpoRenombrado x s
-            --continuar sustiruyendo x
-        in ((nombreFresco, sust expr x s) : bsFinal, cuerpoFinal)
-    -- si el name de binginf no es x y tampco causa captura con s,
-    -- sustituye x en la expr actual
-
-    | otherwise =
-        let (bsFinal, cuerpoFinal) = sustLetStarAux bs cuerpo x s
-        in ((nombre, sust expr x s) : bsFinal, cuerpoFinal)
-
--- busca las expr que vienen de abajo para cambiarlas a nuevas
-renombraBindings :: [Binding] -> String -> String -> [Binding]
-renombraBindings [] _ _ = []
-renombraBindings ((nombre, expr):bs) viejo nuevo
-    | nombre == viejo = (nombre, sust expr viejo (Id nuevo)) : bs
-    | otherwise = (nombre, sust expr viejo (Id nuevo)) : renombraBindings bs viejo nuevo
-
---func auxiliar
---sustituye en las expresiones de los bindings
---el nombre del binding no se modifica aqui
-sustBindingsExprs :: [Binding] -> String -> ASA -> [Binding]
-sustBindingsExprs [] x s = []
-
-sustBindingsExprs ((nombre, expr):bs) x s =
-    (nombre, sust expr x s) : sustBindingsExprs bs x s
---aux
-sustLista :: [ASA] -> String -> ASA -> [ASA]
-sustLista [] x s = []
-sustLista (y:ys) x s = [sust y x s] ++ sustLista ys x s  
-
---func auxiliar
---revisa si algun nombre de los bindings puede capturarz
---una variable libre de s
-evitaCaptura :: [Binding] -> ASA -> ASA -> ([Binding], ASA)
-evitaCaptura [] cuerpo s = ([], cuerpo)
-evitaCaptura ((nombre, expr):bs) cuerpo s
-    --si el nombre del binding aparece como variable libre en s
-    --puede capturarla, entonces hay que cambiarle el nombre con freshvars
-    | nombre `elem` freeVars s =
-        let prohibidos = names s ++ names cuerpo ++ map fst bs
-            nombreFresco = freshName prohibidos
-            --se cambia por una nombre nuevo solo en el cuerpo
-            cuerpoRenombrado = sust cuerpo nombre (Id nombreFresco)
-            --se revisa los demas binding, pero ahora con el cuerpo nuevo y se hace lo mismo
-            (bsRestantes, cuerpoFinal) =
-                evitaCaptura bs cuerpoRenombrado s
-        in ((nombreFresco, expr) : bsRestantes, cuerpoFinal)
-    --no hay problemas, entonces se sigue con los otros a ver si tiene problemas los bs
-    | otherwise =
-        let (bsRestantes, cuerpoFinal) =
-                evitaCaptura bs cuerpo s
-        in ((nombre, expr) : bsRestantes, cuerpoFinal)
+    substLetStar y e bindings body =
+      let e' = recur e
+          scope = LetStar bindings body
+       in if y == x || x `notElem` freeVars scope
+            then LetStar ((y, e') : bindings) body
+            else
+              if y `elem` freeVars replacement
+                then
+                  let fresh = freshName (names scope ++ names replacement ++ [x, y])
+                      renamedScope = sust scope y (Id fresh)
+                   in case recur renamedScope of
+                        LetStar bindings' body' ->
+                          LetStar ((fresh, e') : bindings') body'
+                        _ -> error "Invariante interna rota al sustituir let*"
+                else
+                  case recur scope of
+                    LetStar bindings' body' ->
+                      LetStar ((y, e') : bindings') body'
+                    _ -> error "Invariante interna rota al sustituir let*"
 
 
 sustMany :: ASA -> [Binding] -> ASA
-sustMany cuerpo [] = cuerpo
-sustMany cuerpo bindings =
-    --separar los names 
-    let xs = map fst bindings
-        ss = map snd bindings
-        -- sacar las vars no libres
-        ocupados = names cuerpo ++ concatMap freeVars ss ++ xs
-        -- generar vars nuevas
-        frescos = refrescarNombres xs ocupados
-        --renombramos las variables del cuerpo con los nombres frescos
-        cuerpoRenombrado = foldl (\acc (x, xf) -> sust acc x (Id xf)) cuerpo (zip xs frescos)
-    -- sustituir simultáneamente los nombres nuevos por sus expresiones 's'
-    in foldl (\acc (xf, s) -> sust acc xf s) cuerpoRenombrado (zip frescos ss)
-
--- Función auxiliar para generar variables frescas en masa
---refrescarNombres ["x", "y", "x"] ["x", "y"] -> ["x'", "y'", "x''"]
-refrescarNombres :: [String] -> [String] -> [String]
-refrescarNombres [] _ = []
-refrescarNombres (x:xs) ocupados =
-    let xf = freshName ocupados
-    in xf : refrescarNombres xs (xf : ocupados)
+sustMany body bindings =
+  let used = names body ++ concatMap (names . snd) bindings ++ map fst bindings
+      placeholders = takeFresh (length bindings) used
+      renamedBody =
+        foldl
+          (\current ((x, _), fresh) -> sust current x (Id fresh))
+          body
+          (zip bindings placeholders)
+   in foldl
+        (\current (fresh, (_, value)) -> sust current fresh value)
+        renamedBody
+        (zip placeholders bindings)
+  where
+    takeFresh 0 _ = []
+    takeFresh n used =
+      let fresh = freshName used
+       in fresh : takeFresh (n - 1) (fresh : used)
 
 ------------------------------------
 --OUUUUUUUUUUMAAAAAAAAAAAR-----------
