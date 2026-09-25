@@ -22,15 +22,24 @@ data Value
 type Env = [(Nombre, Value)]
 
 -- RETO 1: desazucarado ----------------------------------------------------
-
+-- YAHIR --
 -- Convierte una lista no vacia de parametros distintos en funciones
 -- unarias anidadas. El primer parametro queda en la funcion exterior.
 curryFun :: [Nombre] -> ASA -> Maybe ASA
+curryFun [] _ = Nothing
+curryFun [x] e = Just (Fun x e)
+curryFun (x:xs) e
+  | x `elem` xs = Nothing
+  | otherwise =
+      case curryFun xs e of
+        Nothing     -> Nothing
+        Just cuerpo -> Just (Fun x cuerpo)
 
 -- Convierte una aplicacion con uno o mas argumentos en aplicaciones unarias
 -- asociadas por la izquierda.
 curryApp :: ASA -> [ASA] -> Maybe ASA
-
+curryApp _ [] = Nothing
+curryApp e xs = Just (foldl App e xs)
 
 --ISMAELLLLLLLL IMPLEMETANCION DE binaryOp and  desugar-----------------
 
