@@ -31,14 +31,77 @@ curryFun :: [Nombre] -> ASA -> Maybe ASA
 -- asociadas por la izquierda.
 curryApp :: ASA -> [ASA] -> Maybe ASA
 
+
+--ISMAELLLLLLLL IMPLEMETANCION DE binaryOp and  desugar-----------------
+
 -- Convierte dos o mas operandos en operaciones binarias asociadas por la
 -- izquierda. El constructor recibido sera Add o Sub.
+--por ejemplo Add [10,20,30] -> Add (Add 10 20) 30
+--OJO: si o si debe recibir 2 ops[10] NO y [] NO
 binaryOp :: (ASA -> ASA -> ASA) -> [ASA] -> Maybe ASA
+binaryOp op [] = Nothing
+binaryOp op [x] = Nothing
+binaryOp op [x,y] = Just (op x y)
+binaryOp op (x:y:xs) = binaryOp op ([op x y] ++ xs)
 
 -- Convierte las ligaduras de let* en let anidados y despues elimina cada let
 -- mediante LetS x e1 e2 ==> App (Fun x e2') e1'. La primera ligadura debe
 -- quedar en el let exterior para que las siguientes puedan usarla.
 desugar :: SASA -> Maybe ASA
+desugar (IdS x) = Just (Id x)
+desugar (NumS n) = Just (Num n)
+desugar (BooleanS b) = Just (Boolean b)
+desugar (NotS e) =
+      case desugar e of
+        Nothing -> Nothing
+        Just e' -> Just (Not e')
+desugar (AddS xs) =
+    case desugarLista xs of
+        Nothing -> Nothing
+        Just xs' -> binaryOp Add xs'
+desugar (SubS xs) =
+    case desugarLista xs of
+        Nothing -> Nothing
+        Just xs' -> binaryOp Sub xs'
+desugar (FunS params e) = 
+      case desugar e of
+        Nothing -> Nothing
+        Just e' -> curryFun params e'
+
+desugar (AppS f xs) = 
+        case desugar f of
+        Nothing -> Nothing
+        Just f' ->         
+          case desugarLista xs of
+            Nothing -> Nothing
+            Just xs'-> curryApp f' xs'
+desugar (LetS x e1 e2)=
+  case desugar e1 of
+        Nothing -> Nothing
+        Just e1' ->         
+          case desugar e2 of
+            Nothing -> Nothing
+            Just e2'-> Just(App(Fun x e2') e1')
+desugar (LetStarS bindings cuerpo) =
+  desugar (letStarToLet bindings cuerpo)
+
+--func aux para manejar la lista de SASA
+desugarLista :: [SASA] -> Maybe [ASA]
+desugarLista [] =Just[]
+desugarLista (x:xs) = 
+      case desugar x of
+        Nothing -> Nothing
+        Just x' -> 
+                  case desugarLista xs of
+                    Nothing -> Nothing
+                    Just xs' -> Just(x' : xs')
+
+--fUNC AUX PARA MANEJAR la lista de bindings en lets aninados
+letStarToLet :: [(Nombre, SASA)] -> SASA -> SASA
+letStarToLet [] cuerpo = cuerpo
+
+letStarToLet ((x,e):xs) cuerpo =
+    LetS x e (letStarToLet xs cuerpo)
 
 -- RETO 2: evaluacion con cerraduras ---------------------------------------
 
