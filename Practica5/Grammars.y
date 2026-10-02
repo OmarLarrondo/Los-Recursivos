@@ -44,9 +44,11 @@ SASA : var                               { IdS $1 }
      -- RETO 2
      -- Agrega aqui las producciones de:
      --   (if <condicion> <consecuente> <alternativa>)
+     | '(' "if" SASA SASA SASA ')' {IfS $3 $4 $5}
      --   (cond (<condicion> <rama>) ... (else <alternativa>))
+    | '(' "cond" '(' SASA SASA ')' Clauses ')' { CondS (($4,$5) : fst $7) (snd $7) }
      --   (letrec (<nombre> <definicion>) <cuerpo>)
-     --
+     | '(' "letrec" '(' var SASA ')'  SASA ')' {LetRecS $4 $5 $7 }
      -- Un cond debe contener al menos una clausula ordinaria y terminar
      -- siempre con una clausula else. Consume la primera clausula ordinaria
      -- en la produccion de cond y define un no terminal Clauses para las
@@ -63,6 +65,11 @@ Operands : SASA SASA                     { [$1, $2] }
 
 Bindings : '(' var SASA ')'              { [($2, $3)] }
          | '(' var SASA ')' Bindings     { ($2, $3) : $5 }
+
+--es para poder parsear las cláusulas del cond
+Clauses : '(' "else" SASA ')' { ([], $3) }
+        | '(' SASA SASA ')' Clauses { (($2,$3) : fst $5, snd $5) }
+{
 
 {
 parseError :: [Token] -> a
