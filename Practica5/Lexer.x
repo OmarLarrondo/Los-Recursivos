@@ -31,12 +31,23 @@ tokens :-
   -- Agrega aqui las reglas para if, cond, else y letrec. Las palabras
   -- reservadas deben aparecer antes de la regla general de identificadores.
 
+--OJO se tuvo que poner "" en if, cond, else y letrec, pues alex
+--lo estaba interpretando como reglas de la expr regular,
+
+  "if"                  { \_ -> TokenIf }
+  "cond"                { \_ -> TokenCond }
+  "else"                { \_ -> TokenElse }
+  "letrec"              { \_ -> TokenLetRec }
+
   "#t"                  { \_ -> TokenBool True }
   "#f"                  { \_ -> TokenBool False }
 
   0$digit+              { \s -> error ("Lexical error: natural con cero inicial = "
                                       ++ show s) }
   @nat                  { \s -> TokenNum (read s) }
+
+--ESTO ES QUE AGARRA CUALQUIER COSA QUE PAREZCA 
+--UN IDENTIFICADOR, LO CONVIERTE EN TOKENID
 
   $letter$idrest*       { \s -> TokenId s }
 
