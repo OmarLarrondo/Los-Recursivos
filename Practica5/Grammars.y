@@ -69,7 +69,7 @@ Bindings : '(' var SASA ')'              { [($2, $3)] }
 --es para poder parsear las cláusulas del cond
 Clauses : '(' "else" SASA ')' { ([], $3) }
         | '(' SASA SASA ')' Clauses { (($2,$3) : fst $5, snd $5) }
-{
+
 
 {
 parseError :: [Token] -> a
