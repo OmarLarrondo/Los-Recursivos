@@ -21,6 +21,7 @@ Este repositorio contiene las prácticas que se desarrollarán a lo largo del cu
 - [Practica3/](Practica3/) — Práctica 3: semántica de paso grande por sustitución
 - [Practica4/](Practica4/) — Práctica 4: de la sintaxis superficial al alcance estático
 - [Practica5/](Practica5/) — Práctica 5: extensión de MiniLisp++
+- [Practica6/](Practica6/) — Práctica 6: transformación de funciones recursivas
 
 ---
 
